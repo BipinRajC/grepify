@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+.env
+data/raw/
+data/processed/
+qdrant_storage/
+*.log
+.DS_Store
