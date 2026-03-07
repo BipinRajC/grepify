@@ -1,4 +1,4 @@
-.PHONY: setup scrape index search qdrant clean
+.PHONY: setup scrape index search qdrant sidecar server clean infra up down
 
 VENV := .venv
 PY   := $(VENV)/bin/python
@@ -17,10 +17,23 @@ index:
 search:
 	$(PY) scripts/search.py "$(q)"
 
-qdrant:
-	docker run -p 6333:6333 -p 6334:6334 \
-		-v $(PWD)/qdrant_storage:/qdrant/storage \
-		qdrant/qdrant
+# Start infrastructure (Postgres + Qdrant)
+infra:
+	docker compose up -d
+
+up: infra sidecar server
+
+down:
+	docker compose down
+
+sidecar:
+	$(PY) -m uvicorn api.sidecar:app --host 0.0.0.0 --port 8001 --reload
+
+server:
+	cd api/server && go run .
+
+clean:
+	docker compose down -v
 
 clean:
 	rm -rf $(VENV) qdrant_storage data/raw data/processed

@@ -12,7 +12,7 @@ from .models import Comment, Thread
 class RedditScraper:
     BASE = "https://www.reddit.com"
 
-    def __init__(self, delay: float = 2.0):
+    def __init__(self, delay: float = 1.0):
         self.session = requests.Session()
         self.session.headers["User-Agent"] = "Grepify/1.0"
         self.delay = delay
@@ -114,7 +114,7 @@ class RedditScraper:
             if not after:
                 break
 
-            print(f"  listing: {len(threads)}/{limit}")
+            print(f"  listing: {len(threads)}/{limit}", flush=True)
 
         return threads
 
@@ -123,7 +123,7 @@ class RedditScraper:
         try:
             data = self._get(url)
         except requests.RequestException as e:
-            print(f"  error: {e}")
+            print(f"  error: {e}", flush=True)
             return None
 
         if not data or len(data) < 2:
@@ -155,17 +155,25 @@ class RedditScraper:
         fetch_comments: bool = True,
     ) -> list[Thread]:
         """Scrape a subreddit: listing + optionally full comments per thread."""
-        print(f"scraping r/{subreddit} ({sort}/{time_filter}, limit={limit})")
+        print(f"scraping r/{subreddit} ({sort}/{time_filter}, limit={limit})", flush=True)
         threads = self.get_listing(subreddit, sort, time_filter, limit)
-        print(f"  got {len(threads)} threads")
+        print(f"  got {len(threads)} threads from listing", flush=True)
 
         if fetch_comments:
+            t0 = time.time()
             for i, thread in enumerate(threads):
                 full = self.get_thread_comments(thread.url)
                 if full:
                     threads[i] = full
                 n = len(threads[i].comments)
-                print(f"  comments: {i + 1}/{len(threads)} ({n} top-level)")
+                elapsed = time.time() - t0
+                done = i + 1
+                eta = (elapsed / done) * (len(threads) - done)
+                print(
+                    f"  [{done}/{len(threads)}] '{thread.title[:50]}' "
+                    f"— {n} comments | elapsed {elapsed:.0f}s eta {eta:.0f}s",
+                    flush=True,
+                )
 
         return threads
 
@@ -204,7 +212,7 @@ class RedditScraper:
         ]
 
         path.write_text(json.dumps(out, indent=2, ensure_ascii=False))
-        print(f"saved {len(out)} threads → {path}")
+        print(f"saved {len(out)} threads → {path}", flush=True)
 
     @staticmethod
     def load(path: Path) -> list[Thread]:

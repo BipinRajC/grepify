@@ -10,3 +10,10 @@ data/processed/
 qdrant_storage/
 *.log
 .DS_Store
+
+# Go binaries
+api/server/server
+api/server/*.exe
+
+# Context / planning notes
+context/
